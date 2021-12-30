@@ -1,0 +1,64 @@
+#!/usr/bin/python3
+
+import socket
+import argparse
+import sys
+import os
+from threading import Thread
+from time import sleep
+from urllib.parse import urlparse
+from requests import get
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-p','--port',
+                    dest='port',
+                    help='Set the port to scan.',
+                    type=int,
+                    )
+parser.add_argument("-i","--input-list",dest="list",help="Your file with domains/urls to scan.")
+parser.add_argument("-o","--output",dest="output",help="Your output file.")
+args = parser.parse_args()
+
+if args.list == None or args.port == None:
+  print("WARNING: input file or port should not be empty!")
+  os.system(f"python3 {sys.argv[0]} --help")
+  exit()
+
+try:
+  domains = open(args.list,"r").read().split("\n")
+except:
+  print(f"WARNING: I couldn't open {args.list}")
+  os.system(f"python3 {sys.argv[0]} --help")
+  exit()
+
+def scan(domain,port):
+  try:
+    test = socket.gethostbyname(domain)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket.setdefaulttimeout(1)
+    result = s.connect_ex((domain,port))
+    if result == 0:
+      print(f"\033[1;32m{domain} {port} is open                      \033[0m")
+      if args.output != None:
+        output_file = open(args.output,"a")
+        output_file.write(domain+"\n")
+        output_file.close()
+  except:
+    None
+#your_ip = get(url="http://ifconfig.me").text
+print(f"input list: {args.list}")
+print(f"port: {args.port}")
+print(f"output file: {args.output}")
+#input(f"Starting scan for port {args.port} on {len(domains)} domains. Your IP: {your_ip} [PRESS ENTER TO CONTINUE]")
+#print(domains)
+for domain in domains:
+  try:
+    print(f"{domain}                                          \r",end="")
+    th = Thread(target=scan,args={domain,args.port})
+    th.daemon = True
+    th.start()
+    sleep(0.2)
+  except Exception as e:
+    print("e:",e)
+
+
